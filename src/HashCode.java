@@ -9,60 +9,40 @@ public class HashCode {
 	static List<Pizza> pizzas;
 
 	public static void main(String[] args) {
-		
-		pizzas=new ArrayList<>();
+
+		pizzas = new ArrayList<>();
 		pizzas.add(new Pizza(extractIngredients("onion pepper olive")));
 		pizzas.add(new Pizza(extractIngredients("mushroom tomato basil")));
 		pizzas.add(new Pizza(extractIngredients("chicken mushroom pepper")));
 		pizzas.add(new Pizza(extractIngredients("tomato mushroom basil")));
 		pizzas.add(new Pizza(extractIngredients("chicken basil")));
-		 
+
 		int numberOfPizza = 5;
-		int twoPersonTeam=1;
-		int threePersonTeam=2;
-		int fourPersonTeam=1;
-		int[] personPerTeamChances= {twoPersonTeam+1,threePersonTeam+1,fourPersonTeam+1};
-		int[] numberOfPizzaGenerator= {numberOfPizza,numberOfPizza,numberOfPizza,numberOfPizza};
-		
+		int twoPersonTeam = 1;
+		int threePersonTeam = 2;
+		int fourPersonTeam = 1;
+		int[] personPerTeamChances = { twoPersonTeam + 1, threePersonTeam + 1, fourPersonTeam + 1 };
+		int[] numberOfPizzaGenerator = { numberOfPizza, numberOfPizza, numberOfPizza, numberOfPizza };
+
 		Map<String, List<List<Integer>>> allCombinationsMap = new HashMap<>();
 		allCombinationsMap.put("T2", createPossibleCombinations(2, numberOfPizzaGenerator));
 		allCombinationsMap.put("T3", createPossibleCombinations(3, numberOfPizzaGenerator));
 		allCombinationsMap.put("T4", createPossibleCombinations(4, numberOfPizzaGenerator));
-		
-		
-		List<List<Integer>> allPossibleTeamConfig=createPossibleCombinations(3,personPerTeamChances);
-		
-		
-		List<List<Integer>> allValidTeamConfig=findValidTeamConfig(allPossibleTeamConfig,numberOfPizza);
-		
-		
+
+		List<List<Integer>> allPossibleTeamConfig = createPossibleCombinations(3, personPerTeamChances);
+
 		List<List<List<Integer>>> validPizzaConfigurations = findAllValidConfigurations(
 				createPossibleCombinations(2, numberOfPizzaGenerator),
 				createPossibleCombinations(3, numberOfPizzaGenerator),
 				createPossibleCombinations(4, numberOfPizzaGenerator));
 
-		
-		List<List<Integer>> bestConfigList=getBestConfigurations(validPizzaConfigurations, allValidTeamConfig);
-		for(List<Integer> t:bestConfigList) {
+		List<List<Integer>> bestConfigList = getBestConfigurations(validPizzaConfigurations, allPossibleTeamConfig);
+		for (List<Integer> t : bestConfigList) {
 			System.out.println(t);
 		}
 
 	}
 
-	static List<List<Integer>> findValidTeamConfig(List<List<Integer>> allPossibleTeamConfig,
-			int numberOfPizza) {
-		List<List<Integer>> allValidTeamConfig = new ArrayList<>();
-		for(List<Integer> i:allPossibleTeamConfig) {
-			int x=i.get(0);
-			int y=i.get(1);
-			int z=i.get(2);
-			if((x*4+y*3+z*2)<=numberOfPizza) {
-				allValidTeamConfig.add(i);
-			}
-		}
-				
-		return allValidTeamConfig;
-	}
 
 	static List<List<Integer>> createPossibleCombinations(int x, int... y) {
 		if (x == 2) {
@@ -131,13 +111,13 @@ public class HashCode {
 								&& !t4combination.contains(t3combination.get(1))
 								&& !t4combination.contains(t3combination.get(2))) {
 							List<List<Integer>> validConfig = new ArrayList<List<Integer>>();
-							
-								validConfig.add(t2combination);
-							
-								validConfig.add(t3combination);
-								
-								validConfig.add(t4combination);
-							
+
+							validConfig.add(t2combination);
+
+							validConfig.add(t3combination);
+
+							validConfig.add(t4combination);
+
 							finalListOfConfigsList.add(validConfig);
 						}
 					}
@@ -146,46 +126,70 @@ public class HashCode {
 		}
 		return finalListOfConfigsList;
 	}
-	static List<List<Integer>> getBestConfigurations(List<List<List<Integer>>> allValidPizzaConfig,List<List<Integer>> validTeamConfig){
-		List<List<Integer>> highestScoringConfig=allValidPizzaConfig.get(0);
-		int highestScore=0;
-		for(List<Integer> x:validTeamConfig) {
-			int teamCount[]= {x.get(0),x.get(1),x.get(2)};
-			
-			for(List<List<Integer>> y:allValidPizzaConfig) {
-				int oneConfigScore=0;
-				
-				for(int i=0;i<3;i++) {
-					oneConfigScore+=teamCount[i]*findTeamScore(y.get(i));
-					
+
+	static List<List<Integer>> getBestConfigurations(List<List<List<Integer>>> allValidPizzaConfig,
+			List<List<Integer>> validTeamConfig) {
+		List<Integer> teamConfig = new ArrayList<Integer>();
+		List<List<Integer>> highestScoringConfig = allValidPizzaConfig.get(0);
+		int highestScore = 0;
+		for (List<Integer> x : validTeamConfig) {
+			for (List<List<Integer>> y : allValidPizzaConfig) {
+				int oneConfigScore = 0;
+
+				for (int i = 0; i < x.size(); i++) {
+					oneConfigScore += x.get(i) * findTeamScore(y.get(i));
 				}
-				if(oneConfigScore>highestScore) {
-					highestScore=oneConfigScore;
-					highestScoringConfig=y;
+				if (oneConfigScore > highestScore) {
+					highestScore = oneConfigScore;
+					highestScoringConfig = y;
+					teamConfig = x;
 				}
-				
+
 			}
 		}
-		
-		return highestScoringConfig;
-		
-	}
-	private static  int findTeamScore(List<Integer> singleTeamOrder) {
-		int ingredientsCount=0;
-		List<String> allIngredients=new ArrayList<String>();
-		List<Pizza> pizzaForThatTeam=new ArrayList<>();
-		for(int pizzaIndex:singleTeamOrder) {
-			pizzaForThatTeam.add(pizzas.get(pizzaIndex));
-		}
-		for(Pizza p:pizzaForThatTeam) {
-			allIngredients.addAll(p.getIngredients());
-		}
-		ingredientsCount+=allIngredients.stream().distinct().collect(Collectors.toList()).size();
-		return ingredientsCount*ingredientsCount;
-		
+
+		List<List<Integer>> updatedHighestScoringConfig = prepareFinalConfig(highestScoringConfig, teamConfig);
+		return updatedHighestScoringConfig;
+
 	}
 
-	static List<String> extractIngredients(String x){
+	private static List<List<Integer>> prepareFinalConfig(List<List<Integer>> highestScoringConfig,
+			List<Integer> teamConfig) {
+		
+		 System.out.println(teamConfig+"\n"); 
+		 for (List<Integer> t :highestScoringConfig) { 
+			 System.out.println(t); 
+		 } 
+		 System.out.println();
+		 
+
+		List<List<Integer>> updatedHighestScoringConfig = new ArrayList<List<Integer>>();
+		for (int x=0;x<teamConfig.size();x++) {
+			for (int y = 0; y < teamConfig.get(x); y++) {
+				updatedHighestScoringConfig.add(highestScoringConfig.get(x));
+			}
+
+		}
+		return updatedHighestScoringConfig;
+
+	}
+
+	private static int findTeamScore(List<Integer> singleTeamOrder) {
+		int ingredientsCount = 0;
+		List<String> allIngredients = new ArrayList<String>();
+		List<Pizza> pizzaForThatTeam = new ArrayList<>();
+		for (int pizzaIndex : singleTeamOrder) {
+			pizzaForThatTeam.add(pizzas.get(pizzaIndex));
+		}
+		for (Pizza p : pizzaForThatTeam) {
+			allIngredients.addAll(p.getIngredients());
+		}
+		ingredientsCount += allIngredients.stream().distinct().collect(Collectors.toList()).size();
+		return ingredientsCount * ingredientsCount;
+
+	}
+
+	static List<String> extractIngredients(String x) {
 		return Arrays.asList(x.split(" "));
 	}
 
